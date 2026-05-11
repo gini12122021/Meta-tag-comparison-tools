@@ -2,7 +2,7 @@
 
 A powerful web-based utility to compare SEO meta tags between two different environments (e.g., Staging vs. Live). This tool helps ensure that SEO metadata is correctly deployed and identifies discrepancies quickly.
 
-## 🚀 Features
+##  Features
 
 - **CSV Upload Support**: Easily upload large lists of URL pairs for bulk comparison.
 - **Comprehensive Comparison**: Checks and compares:
@@ -14,18 +14,18 @@ A powerful web-based utility to compare SEO meta tags between two different envi
 - **Export Capabilities**: Download the detailed comparison results as a CSV for further analysis.
 - **Real-time Feedback**: View progress and results directly in a clean, modern web interface.
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **Backend**: Node.js, Express
 - **Scraping**: Axios, Cheerio
 - **Frontend**: HTML5, Vanilla JavaScript, CSS3
 
-## 📋 Prerequisites
+##  Prerequisites
 
 - [Node.js](https://nodejs.org/) (v14 or higher recommended)
 - npm (comes with Node.js)
 
-## ⚙️ Installation
+##  Installation
 
 1. Clone the repository:
    ```bash
@@ -38,7 +38,7 @@ A powerful web-based utility to compare SEO meta tags between two different envi
    npm install
    ```
 
-## 🚀 Usage
+##  Usage
 
 1. Start the server:
    ```bash
@@ -56,6 +56,6 @@ A powerful web-based utility to compare SEO meta tags between two different envi
 
 5. Review the results on screen and click **Export CSV** to save the report.
 
-## 📄 License
+##  License
 
 This project is open-source and free to use.
