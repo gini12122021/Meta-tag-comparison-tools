@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meta Checker</title>
+  <style>
+    :root {
+      --bg: #f4efe6;
+      --panel: rgba(255, 251, 245, 0.92);
+      --panel-strong: #fffaf2;
+      --text: #2c2118;
+      --muted: #6d5b4b;
+      --line: rgba(83, 54, 33, 0.14);
+      --accent: #b34c1e;
+      --accent-dark: #8f3c17;
+      --good: #256f3d;
+      --warn: #bc7a08;
+      --bad: #9f2222;
+      --shadow: 0 24px 60px rgba(76, 45, 18, 0.12);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(241, 192, 125, 0.34), transparent 34%),
+        radial-gradient(circle at right center, rgba(180, 76, 30, 0.15), transparent 28%),
+        linear-gradient(160deg, #f7f2e9 0%, #eee4d1 50%, #f9f6ef 100%);
+      padding: 32px 18px 48px;
+    }
+
+    .shell {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero {
+      padding: 28px;
+      margin-bottom: 22px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      top: -120px;
+      right: -80px;
+      background: radial-gradient(circle, rgba(179, 76, 30, 0.22), transparent 68%);
+      pointer-events: none;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+      max-width: 10ch;
+    }
+
+    .lead {
+      max-width: 760px;
+      font-size: 1.02rem;
+      line-height: 1.6;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .panel {
+      padding: 24px;
+    }
+
+    .panel h2 {
+      margin: 0 0 8px;
+      font-size: 1.4rem;
+    }
+
+    .panel p,
+    .hint,
+    .status-line {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .upload-box {
+      margin: 18px 0 16px;
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px dashed rgba(179, 76, 30, 0.42);
+      background: rgba(255, 248, 239, 0.8);
+    }
+
+    input[type="file"],
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      color: var(--text);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 160px;
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      color: var(--text);
+      resize: vertical;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: transform 160ms ease, opacity 160ms ease, background 160ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff6f1;
+    }
+
+    .primary:hover {
+      background: var(--accent-dark);
+    }
+
+    .secondary {
+      background: rgba(83, 54, 33, 0.08);
+      color: var(--text);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .stat {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 248, 239, 0.82);
+      border: 1px solid var(--line);
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    .stat:hover {
+      transform: translateY(-2px);
+      background: var(--panel-strong);
+      border-color: var(--accent);
+    }
+
+    .stat.active-filter {
+      background: var(--accent);
+      color: #fff6f1;
+      border-color: var(--accent-dark);
+    }
+
+    .stat.active-filter strong,
+    .stat.active-filter {
+      color: #fff6f1 !important;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.7rem;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel-strong);
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(83, 54, 33, 0.1);
+      vertical-align: top;
+      font-size: 0.95rem;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #f7eee0;
+      z-index: 1;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+
+    .same {
+      background: rgba(37, 111, 61, 0.12);
+      color: var(--good);
+    }
+
+    .ignored {
+      background: rgba(188, 122, 8, 0.12);
+      color: var(--warn);
+    }
+
+    .not-same,
+    .error {
+      background: rgba(159, 34, 34, 0.12);
+      color: var(--bad);
+    }
+
+    .status-line {
+      min-height: 24px;
+      margin-top: 14px;
+    }
+
+    .btn-small {
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      border-radius: 6px;
+    }
+
+    .empty {
+      padding: 36px 18px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 12px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      color: var(--text);
+      opacity: 0.7;
+      padding: 8px 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 99px;
+      border: 1px solid transparent;
+    }
+
+    .tab-btn:hover {
+      opacity: 0.9;
+    }
+
+    .tab-btn.active {
+      opacity: 1;
+      background: rgba(179, 76, 30, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(179, 76, 30, 0.2);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .text-input-field {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      margin-top: 14px;
+      background: var(--panel-strong);
+      color: var(--text);
+    }
+
+    @media (max-width: 960px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding-inline: 12px;
+      }
+
+      .panel,
+      .hero {
+        padding: 20px;
+      }
+
+      .summary {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <h1>Meta Tag Comparison Tool</h1>
+      <p class="lead">
+        Upload a CSV with staging and live URLs, compare HTTP status plus title, description, and keywords, then export the full report as a result CSV.
+        Empty values on the live page are marked as ignored so they do not fail the comparison.
+      </p>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Data Source</h2>
+        
+        <div class="tabs">
+          <button class="tab-btn active" data-target="tab-csv">CSV Upload</button>
+          <button class="tab-btn" data-target="tab-sheet">Google Sheet</button>
+          <button class="tab-btn" data-target="tab-manual">Manual Input</button>
+        </div>
+
+        <div class="tab-content active" id="tab-csv">
+          <p>CSV headers can be flexible. The tool recognizes columns like <code>staging_url</code>, <code>live_url</code>.</p>
+          <div class="upload-box">
+            <input id="csvFile" type="file" accept=".csv,text/csv">
+            <div class="status-line" id="fileStatus">No CSV selected yet.</div>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-sheet">
+          <p>Enter a public Google Sheet URL or ID. Make sure it's accessible to "Anyone with the link".</p>
+          <input type="text" id="sheetUrl" class="text-input-field" placeholder="https://docs.google.com/spreadsheets/d/.../edit">
+          <button class="secondary" id="loadSheetBtn" style="margin-top: 14px;">Load from Sheet</button>
+          <div class="status-line" id="sheetStatus" style="margin-top: 14px;"></div>
+        </div>
+
+        <div class="tab-content" id="tab-manual">
+          <div class="hint">Fallback: paste rows as <code>staging_url,live_url,keyword</code> or tab-separated.</div>
+          <textarea id="manualInput" placeholder="https://stg.example.com/page, https://www.example.com/page, sunflower"></textarea>
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="compareButton">Compare URLs</button>
+          <button class="secondary" id="downloadButton" disabled>Download Result CSV</button>
+        </div>
+
+        <div class="hint" id="apiHint"></div>
+        <div class="status-line" id="runStatus"></div>
+      </section>
+
+      <section class="panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <h2 style="margin: 0;">Comparison Result</h2>
+          <div style="display: flex; gap: 8px;">
+            <button class="secondary btn-small" id="recheckSelectedBtn" disabled>Re-check Selected</button>
+            <button class="secondary btn-small" id="recheckAllBtn" disabled>Re-check All</button>
+          </div>
+        </div>
+        <div class="summary" id="summary">
+          <div class="stat"><strong id="totalCount">0</strong>Total rows</div>
+          <div class="stat"><strong id="sameCount">0</strong>Same</div>
+          <div class="stat"><strong id="differentCount">0</strong>Not Same</div>
+          <div class="stat"><strong id="errorCount">0</strong>Error</div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40px;"><input type="checkbox" id="selectAll"></th>
+                <th>Staging URL</th>
+                <th>Live URL</th>
+                <th>Result</th>
+                <th>Status</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Keywords</th>
+                <th>Issues</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="resultBody">
+              <tr>
+                <td class="empty" colspan="10">Upload a CSV and run a comparison to see results here.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("csvFile");
+    const manualInput = document.getElementById("manualInput");
+    const compareButton = document.getElementById("compareButton");
+    const downloadButton = document.getElementById("downloadButton");
+    const fileStatus = document.getElementById("fileStatus");
+    const runStatus = document.getElementById("runStatus");
+    const apiHint = document.getElementById("apiHint");
+    const resultBody = document.getElementById("resultBody");
+    const recheckAllBtn = document.getElementById("recheckAllBtn");
+    const recheckSelectedBtn = document.getElementById("recheckSelectedBtn");
+    const selectAllCheckbox = document.getElementById("selectAll");
+
+    const tabBtns = document.querySelectorAll(".tab-btn");
+    const tabContents = document.querySelectorAll(".tab-content");
+    const sheetUrlInput = document.getElementById("sheetUrl");
+    const loadSheetBtn = document.getElementById("loadSheetBtn");
+    const sheetStatus = document.getElementById("sheetStatus");
+
+    let uploadedRows = [];
+    let lastResults = [];
+    let selectedIndices = new Set();
+    let currentFilter = null;
+    const apiBaseUrl = getApiBaseUrl();
+
+    apiHint.textContent = `API target: ${apiBaseUrl}/compare`;
+
+    document.querySelectorAll(".stat").forEach(stat => {
+      stat.addEventListener("click", () => {
+        const type = stat.querySelector("strong").id.replace("Count", "");
+        const filterMap = { total: null, same: "Same", different: "Not Same", error: "Error" };
+        const filterValue = filterMap[type];
+
+        if (currentFilter === filterValue) {
+          currentFilter = null; // Toggle off
+        } else {
+          currentFilter = filterValue;
+        }
+
+        // Update UI
+        document.querySelectorAll(".stat").forEach(s => s.classList.remove("active-filter"));
+        if (currentFilter !== null || type === "total") {
+          stat.classList.add("active-filter");
+        }
+        if (type === "total") currentFilter = null;
+
+        renderResults(lastResults);
+      });
+    });
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        tabBtns.forEach(b => b.classList.remove("active"));
+        tabContents.forEach(c => c.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.target).classList.add("active");
+      });
+    });
+
+    loadSheetBtn.addEventListener("click", async () => {
+      const url = sheetUrlInput.value.trim();
+      if (!url) {
+        sheetStatus.textContent = "Please enter a Google Sheet URL first.";
+        return;
+      }
+      sheetStatus.textContent = "Loading sheet...";
+      try {
+        const response = await fetch(`${apiBaseUrl}/fetch-sheet`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url })
+        });
+        const text = await response.text();
+        if (!response.ok) {
+          try {
+            const json = JSON.parse(text);
+            throw new Error(json.error || "Failed to fetch sheet.");
+          } catch(e) {
+            throw new Error("Failed to fetch sheet.");
+          }
+        }
+        const parsedRows = extractUrlPairs(text);
+        if (!parsedRows.length) {
+          uploadedRows = [];
+          sheetStatus.textContent = "Sheet loaded, but no valid staging/live URL pairs were found.";
+        } else {
+          uploadedRows = parsedRows;
+          sheetStatus.textContent = `Loaded ${parsedRows.length} URL pair(s) from sheet.`;
+        }
+      } catch (error) {
+        uploadedRows = [];
+        sheetStatus.textContent = `Error: ${error.message}`;
+      }
+    });
+
+    fileInput.addEventListener("change", handleFileSelection);
+    compareButton.addEventListener("click", compareRows);
+    downloadButton.addEventListener("click", downloadResults);
+    recheckAllBtn.addEventListener("click", recheckAll);
+    recheckSelectedBtn.addEventListener("click", recheckSelected);
+    selectAllCheckbox.addEventListener("change", handleSelectAll);
+
+    async function handleFileSelection(event) {
+      const [file] = event.target.files || [];
+
+      if (!file) {
+        uploadedRows = [];
+        fileStatus.textContent = "No CSV selected yet.";
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        const parsedRows = extractUrlPairs(text);
+
+        if (!parsedRows.length) {
+          uploadedRows = [];
+          fileStatus.textContent = "CSV loaded, but no valid staging/live URL pairs were found.";
+          return;
+        }
+
+        uploadedRows = parsedRows;
+        fileStatus.textContent = `${file.name} loaded with ${parsedRows.length} URL pair(s).`;
+      } catch (error) {
+        uploadedRows = [];
+        fileStatus.textContent = `Unable to read CSV: ${error.message}`;
+      }
+    }
+
+    function stripBom(text) {
+      return String(text || "").replace(/^\uFEFF/, "");
+    }
+
+    function countDelimiter(line, delimiter) {
+      return String(line || "").split(delimiter).length - 1;
+    }
+
+    function detectDelimiter(text) {
+      const sampleLines = stripBom(text)
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .slice(0, 5);
+
+      const delimiters = [",", ";", "\t", "|"];
+      let bestDelimiter = ",";
+      let bestScore = -1;
+
+      for (const delimiter of delimiters) {
+        const score = sampleLines.reduce((total, line) => total + countDelimiter(line, delimiter), 0);
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestDelimiter = delimiter;
+        }
+      }
+
+      return bestScore > 0 ? bestDelimiter : ",";
+    }
+
+    function parseDelimited(text, delimiter) {
+      const rows = [];
+      let current = "";
+      let row = [];
+      let inQuotes = false;
+      const cleanedText = stripBom(text);
+
+      for (let i = 0; i < cleanedText.length; i += 1) {
+        const char = cleanedText[i];
+        const next = cleanedText[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && next === '"') {
+            current += '"';
+            i += 1;
+          } else {
+            inQuotes = !inQuotes;
+          }
+          continue;
+        }
+
+        if (char === delimiter && !inQuotes) {
+          row.push(current);
+          current = "";
+          continue;
+        }
+
+        if ((char === "\n" || char === "\r") && !inQuotes) {
+          if (char === "\r" && next === "\n") {
+            i += 1;
+          }
+          row.push(current);
+          rows.push(row);
+          row = [];
+          current = "";
+          continue;
+        }
+
+        current += char;
+      }
+
+      if (current || row.length) {
+        row.push(current);
+        rows.push(row);
+      }
+
+      return rows
+        .map((cells) => cells.map((cell) => cell.trim()))
+        .filter((cells) => cells.some((cell) => cell !== ""));
+    }
+
+    function parseCsv(text) {
+      const delimiter = detectDelimiter(text);
+      return parseDelimited(text, delimiter);
+    }
+
+    function normalizeHeader(value) {
+      return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    function isUrlLike(value) {
+      return /^https?:\/\//i.test(String(value || "").trim());
+    }
+
+    function extractUrlPairs(text) {
+      const csvRows = parseCsv(text);
+
+      if (!csvRows.length) {
+        return [];
+      }
+
+      const headerRow = csvRows[0];
+      const normalizedHeader = headerRow.map(normalizeHeader);
+      const stagingIndex = normalizedHeader.findIndex((header) =>
+        ["staging", "stg", "stage", "stagingurl", "stgurl", "staginglink", "stglink", "stagingpageurl"].includes(header)
+      );
+      const liveIndex = normalizedHeader.findIndex((header) =>
+        ["live", "liveurl", "production", "prod", "produrl", "livelink", "livepageurl"].includes(header)
+      );
+      const keywordIndex = normalizedHeader.findIndex((header) =>
+        ["keyword", "keywords", "target", "targetkeyword", "targetkeywords"].includes(header)
+      );
+      const hasHeader = stagingIndex !== -1 && liveIndex !== -1;
+      const dataRows = hasHeader ? csvRows.slice(1) : csvRows;
+
+      return dataRows
+        .map((cells) => {
+          if (hasHeader) {
+            return {
+              staging: (cells[stagingIndex] || "").trim(),
+              live: (cells[liveIndex] || "").trim(),
+              keywords: keywordIndex !== -1 ? (cells[keywordIndex] || "").trim() : ""
+            };
+          }
+
+          const first = (cells[0] || "").trim();
+          const second = (cells[1] || "").trim();
+          const third = (cells[2] || "").trim();
+          return { staging: first, live: second, keywords: third };
+        })
+        .filter((pair) => isUrlLike(pair.staging) && isUrlLike(pair.live));
+    }
+
+    function extractManualPairs() {
+      return manualInput.value
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const parts = line.includes("\t")
+            ? line.split("\t")
+            : line.includes("|")
+              ? line.split("|")
+              : line.includes(";")
+                ? line.split(";")
+                : line.split(",");
+          return {
+            staging: (parts[0] || "").trim(),
+            live: (parts[1] || "").trim(),
+            keywords: (parts[2] || "").trim()
+          };
+        })
+        .filter((pair) => isUrlLike(pair.staging) && isUrlLike(pair.live));
+    }
+
+    function getPairsForComparison() {
+      const activeTabId = document.querySelector(".tab-content.active").id;
+      if (activeTabId === "tab-manual") {
+        return extractManualPairs();
+      }
+      // Both tab-csv and tab-sheet load data into uploadedRows
+      return uploadedRows;
+    }
+
+    function getApiBaseUrl() {
+      const apiParam = new URLSearchParams(window.location.search).get("api");
+      const liveServerPorts = ["5500", "5501", "5502", "5503"];
+
+      if (apiParam) {
+        return apiParam.replace(/\/$/, "");
+      }
+
+      if (window.location.protocol.startsWith("http") && window.location.port && !liveServerPorts.includes(window.location.port)) {
+        return window.location.origin;
+      }
+
+      if (["127.0.0.1", "localhost"].includes(window.location.hostname)) {
+        return `${window.location.protocol}//${window.location.hostname}:3000`;
+      }
+
+      return window.location.origin;
+    }
+
+    async function readJsonResponse(response) {
+      const rawText = await response.text();
+
+      if (!rawText.trim()) {
+        throw new Error(`API returned an empty response. Start the Node server and open the URL it prints in the terminal, or use ${apiBaseUrl}.`);
+      }
+
+      try {
+        return JSON.parse(rawText);
+      } catch (error) {
+        throw new Error(`API did not return JSON. Open the app from the Node server URL printed in the terminal, or pass ?api=${apiBaseUrl}.`);
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function pill(status) {
+      const normalized = String(status || "").toLowerCase().replace(/\s+/g, "-");
+      return `<span class="pill ${normalized}">${escapeHtml(status || "")}</span>`;
+    }
+
+    function renderResults(results) {
+      if (!results.length) {
+        resultBody.innerHTML = '<tr><td class="empty" colspan="10">No comparison results to show.</td></tr>';
+        return;
+      }
+
+      let filtered = results;
+      if (currentFilter) {
+        filtered = results.filter(r => r.result === currentFilter);
+      }
+
+      if (!filtered.length) {
+        resultBody.innerHTML = `<tr><td class="empty" colspan="10">No results matching "${currentFilter}".</td></tr>`;
+        return;
+      }
+
+      resultBody.innerHTML = filtered.map((row) => {
+        // Find index in main results array for re-checking
+        const originalIndex = lastResults.indexOf(row);
+        const isChecked = selectedIndices.has(originalIndex);
+        
+        return `
+          <tr class="${isChecked ? 'selected-row' : ''}">
+            <td><input type="checkbox" class="row-checkbox" data-index="${originalIndex}" ${isChecked ? 'checked' : ''} onchange="toggleSelection(${originalIndex})"></td>
+            <td>${escapeHtml(row.stagingUrl)}</td>
+            <td>${escapeHtml(row.liveUrl)}</td>
+            <td>${pill(row.result)}</td>
+            <td>${pill(row.status)} <div>${escapeHtml(row.stagingHttpStatus || "-")} / ${escapeHtml(row.liveHttpStatus || "-")}</div></td>
+            <td title="STAGING: ${escapeHtml(row.stagingMeta?.title || '-')}\n\nLIVE: ${escapeHtml(row.liveMeta?.title || '-')}">${pill(row.titleStatus)}</td>
+            <td title="STAGING: ${escapeHtml(row.stagingMeta?.description || '-')}\n\nLIVE: ${escapeHtml(row.liveMeta?.description || '-')}">${pill(row.descriptionStatus)}</td>
+            <td title="STAGING: ${escapeHtml(row.stagingMeta?.keywords || '-')}\n\nLIVE: ${escapeHtml(row.liveMeta?.keywords || '-')}${row.targetKeywords ? '\n\nTARGET: ' + escapeHtml(row.targetKeywords) : ''}">
+              ${pill(row.keywordsStatus)}
+              ${row.targetKeywords ? `<div style="font-size:0.7rem; color:var(--muted); margin-top:4px;">Target: ${escapeHtml(row.targetKeywords)}</div>` : ''}
+            </td>
+            <td>${escapeHtml(row.issues || "-")}</td>
+            <td>
+              <button class="secondary btn-small" onclick="recheckRow(${originalIndex})">Re-check</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      updateSelectAllState();
+      updateSelectedBtnState();
+    }
+
+    function toggleSelection(index) {
+      if (selectedIndices.has(index)) {
+        selectedIndices.delete(index);
+      } else {
+        selectedIndices.add(index);
+      }
+      renderResults(lastResults);
+    }
+
+    function handleSelectAll() {
+      const isChecked = selectAllCheckbox.checked;
+      let targets = lastResults;
+      if (currentFilter) {
+        targets = lastResults.filter(r => r.result === currentFilter);
+      }
+
+      targets.forEach(row => {
+        const index = lastResults.indexOf(row);
+        if (isChecked) {
+          selectedIndices.add(index);
+        } else {
+          selectedIndices.delete(index);
+        }
+      });
+      renderResults(lastResults);
+    }
+
+    function updateSelectAllState() {
+      let targets = lastResults;
+      if (currentFilter) {
+        targets = lastResults.filter(r => r.result === currentFilter);
+      }
+      
+      if (!targets.length) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+        return;
+      }
+
+      const visibleSelected = targets.filter(row => selectedIndices.has(lastResults.indexOf(row)));
+      selectAllCheckbox.checked = visibleSelected.length === targets.length;
+      selectAllCheckbox.indeterminate = visibleSelected.length > 0 && visibleSelected.length < targets.length;
+    }
+
+    function updateSelectedBtnState() {
+      recheckSelectedBtn.disabled = selectedIndices.size === 0;
+    }
+
+    async function recheckSelected() {
+      const indices = Array.from(selectedIndices);
+      if (!indices.length) return;
+
+      const targets = indices.map(idx => lastResults[idx]).filter(Boolean);
+      if (!targets.length) return;
+
+      recheckSelectedBtn.disabled = true;
+      recheckSelectedBtn.textContent = "Processing...";
+      
+      await performBulkRecheck(targets);
+
+      recheckSelectedBtn.disabled = false;
+      recheckSelectedBtn.textContent = "Re-check Selected";
+    }
+
+    async function performBulkRecheck(targets) {
+      const chunkSize = 10;
+      for (let i = 0; i < targets.length; i += chunkSize) {
+        const chunk = targets.slice(i, i + chunkSize);
+        
+        try {
+          const response = await fetch(`${apiBaseUrl}/compare`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ urls: chunk.map(r => ({ staging: r.stagingUrl, live: r.liveUrl, keywords: r.targetKeywords })) })
+          });
+
+          const payload = await readJsonResponse(response);
+
+          if (payload && payload.length) {
+            payload.forEach((newResult, idx) => {
+              const originalRow = chunk[idx];
+              const mainIndex = lastResults.indexOf(originalRow);
+              if (mainIndex !== -1) {
+                lastResults[mainIndex] = newResult;
+              }
+            });
+            renderResults(lastResults);
+            updateSummary(lastResults);
+          }
+        } catch (error) {
+          console.error("Bulk re-check failed", error);
+        }
+      }
+    }
+
+    async function recheckRow(index) {
+      const row = lastResults[index];
+      if (!row) return;
+
+      const btn = event?.target;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "...";
+      }
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/compare`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ urls: [{ staging: row.stagingUrl, live: row.liveUrl, keywords: row.targetKeywords }] })
+        });
+
+        const payload = await readJsonResponse(response);
+        if (payload && payload.length) {
+          lastResults[index] = payload[0];
+          renderResults(lastResults);
+          updateSummary(lastResults);
+        }
+      } catch (error) {
+        console.error("Re-check failed", error);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Re-check";
+        }
+      }
+    }
+
+    function updateSummary(results) {
+      const counts = results.reduce((summary, row) => {
+        const key = row.result || "Error";
+        summary.total += 1;
+        if (key === "Same") {
+          summary.same += 1;
+        } else if (key === "Not Same") {
+          summary.different += 1;
+        } else {
+          summary.error += 1;
+        }
+        return summary;
+      }, { total: 0, same: 0, different: 0, error: 0 });
+
+      document.getElementById("totalCount").textContent = counts.total;
+      document.getElementById("sameCount").textContent = counts.same;
+      document.getElementById("differentCount").textContent = counts.different;
+      document.getElementById("errorCount").textContent = counts.error;
+      downloadButton.disabled = results.length === 0;
+      recheckAllBtn.disabled = results.length === 0;
+    }
+
+    async function recheckAll() {
+      let targets = lastResults;
+      if (currentFilter) {
+        targets = lastResults.filter(r => r.result === currentFilter);
+      }
+
+      if (!targets.length) return;
+
+      recheckAllBtn.disabled = true;
+      recheckAllBtn.textContent = "Processing...";
+      
+      await performBulkRecheck(targets);
+
+      recheckAllBtn.disabled = false;
+      recheckAllBtn.textContent = "Re-check All";
+    }
+
+    async function compareRows() {
+      const pairs = getPairsForComparison();
+
+      if (!pairs.length) {
+        runStatus.textContent = "Please provide valid staging/live URL pairs first.";
+        lastResults = [];
+        downloadButton.disabled = true;
+        renderResults([]);
+        updateSummary([]);
+        return;
+      }
+
+      compareButton.disabled = true;
+      downloadButton.disabled = true;
+      lastResults = [];
+      selectedIndices.clear();
+      renderResults([]);
+      updateSummary([]);
+      
+      const chunkSize = 10;
+      const totalPairs = pairs.length;
+      
+      for (let i = 0; i < totalPairs; i += chunkSize) {
+        const chunk = pairs.slice(i, i + chunkSize);
+        runStatus.textContent = `Processing batch ${Math.floor(i/chunkSize) + 1} of ${Math.ceil(totalPairs/chunkSize)}... (${i} of ${totalPairs} done)`;
+        
+        try {
+          const response = await fetch(`${apiBaseUrl}/compare`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ urls: chunk })
+          });
+
+          const payload = await readJsonResponse(response);
+
+          if (!response.ok) {
+            throw new Error(payload.error || "Comparison failed");
+          }
+
+          lastResults.push(...payload);
+          renderResults(lastResults);
+          updateSummary(lastResults);
+        } catch (error) {
+          runStatus.textContent = `Comparison failed during batch: ${error.message}`;
+          compareButton.disabled = false;
+          return;
+        }
+      }
+      
+      runStatus.textContent = `Comparison finished for all ${totalPairs} URL pair(s).`;
+      downloadButton.disabled = lastResults.length === 0;
+      compareButton.disabled = false;
+    }
+
+    function csvCell(value) {
+      const stringValue = String(value ?? "");
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+
+    function buildResultCsv(results) {
+      const header = [
+        "staging_url",
+        "live_url",
+        "result",
+        "status_match",
+        "staging_status_code",
+        "live_status_code",
+        "title_status",
+        "description_status",
+        "keywords_status",
+        "issues",
+        "staging_title",
+        "live_title",
+        "staging_description",
+        "live_description",
+        "staging_keywords",
+        "live_keywords"
+      ];
+
+      const rows = results.map((row) => [
+        row.stagingUrl,
+        row.liveUrl,
+        row.result,
+        row.status,
+        row.stagingHttpStatus,
+        row.liveHttpStatus,
+        row.titleStatus,
+        row.descriptionStatus,
+        row.keywordsStatus,
+        row.issues,
+        row.stagingMeta?.title || "",
+        row.liveMeta?.title || "",
+        row.stagingMeta?.description || "",
+        row.liveMeta?.description || "",
+        row.stagingMeta?.keywords || "",
+        row.liveMeta?.keywords || ""
+      ]);
+
+      return [header, ...rows]
+        .map((cells) => cells.map(csvCell).join(","))
+        .join("\n");
+    }
+
+    function downloadResults() {
+      if (!lastResults.length) {
+        return;
+      }
+
+      const csv = buildResultCsv(lastResults);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "meta-comparison-result.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
